@@ -1,5 +1,9 @@
 # Introduction
 
+This repository is forked from https://github.com/google/fhir. Includes fixes for https://github.com/google/fhir/issues/17 and miscellaneous other small changes. The [upstream branch](https://github.com/VirtaHealth/fhir/tree/upstream) tracks the original repo. To update the fork from upstream:
+
+    $ git pull --rebase https://github.com/google/fhir.git master:upstream
+
 FhirProto is Google’s implementation of the [FHIR Standard](http://hl7.org/fhir/) for Health Care data using [Protocol Buffers](https://developers.google.com/protocol-buffers).  By leveraging Google’s core data storage format, FhirProto provides a type-safe, strongly validated FHIR format with cross-language support at a fraction of the size on disk, making it a great data model to develop your Health Care application on.  Structured Codes and Extensions guarantee that your data will be in the correct format.  Support for generating and validating against custom Implementation Guides allow you to customize FhirProto to your dataset and requirements.  Parsing and Printing libraries make it easy to go back and forth between FhirProto format and JSON.
 
 # Getting Started
