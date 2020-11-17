@@ -160,6 +160,8 @@ class PrimitiveHandler {
   virtual StatusOr<DateTimePrecision> GetDateTimePrecision(
       const ::google::protobuf::Message& date_time) const = 0;
 
+  virtual ::google::protobuf::Message* NewCoding() const = 0;
+
   virtual StatusOr<std::string> GetCodingSystem(
       const ::google::protobuf::Message& coding) const = 0;
 
@@ -279,7 +281,6 @@ template <typename BundleType,
               FHIR_DATATYPE(BundleType, sampled_data().origin)>
 class PrimitiveHandlerTemplate : public PrimitiveHandler {
  public:
-  typedef BundleType Bundle;
   typedef CodingType Coding;
   typedef ContainedResourceType ContainedResource;
   typedef ExtensionType Extension;
@@ -421,6 +422,8 @@ class PrimitiveHandlerTemplate : public PrimitiveHandler {
     FHIR_RETURN_IF_ERROR(CheckType<SimpleQuantity>(simple_quantity));
     return dynamic_cast<const SimpleQuantity&>(simple_quantity).value().value();
   }
+
+  ::google::protobuf::Message* NewCoding() const override { return new Coding(); }
 
   StatusOr<std::string> GetCodingSystem(
       const ::google::protobuf::Message& coding) const override {
@@ -638,6 +641,11 @@ absl::optional<std::unique_ptr<PrimitiveWrapper>> GetWrapperForR4Types(
   if (IsMessageType<FHIR_DATATYPE(ExtensionType, url)>(target_descriptor)) {
     return std::unique_ptr<PrimitiveWrapper>(
         new StringTypeWrapper<FHIR_DATATYPE(ExtensionType, url)>());
+  }
+
+  if (IsMessageType<FHIR_DATATYPE(ExtensionType, uuid)>(target_descriptor)) {
+    return std::unique_ptr<PrimitiveWrapper>(
+        new StringTypeWrapper<FHIR_DATATYPE(ExtensionType, uuid)>());
   }
   return absl::optional<std::unique_ptr<PrimitiveWrapper>>();
 }

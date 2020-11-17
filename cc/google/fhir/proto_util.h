@@ -21,13 +21,13 @@
 #include <string>
 
 
+#include "tensorflow/core/platform/logging.h"
 #include "google/protobuf/descriptor.h"
 #include "google/protobuf/message.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "google/fhir/status/status.h"
 #include "google/fhir/status/statusor.h"
-#include "tensorflow/core/platform/logging.h"
 
 namespace google {
 namespace fhir {
@@ -214,6 +214,12 @@ template <typename T>
 bool IsMessageType(const ::google::protobuf::Message& message) {
   return IsMessageType<T>(message.GetDescriptor());
 }
+
+StatusOr<const google::protobuf::Message*> GetMessageInField(
+    const ::google::protobuf::Message& message, const std::string& field_name);
+
+StatusOr<google::protobuf::Message*> MutableMessageInField(::google::protobuf::Message* message,
+                                                 const std::string& field_name);
 
 template <typename T>
 StatusOr<T> GetMessageInField(const ::google::protobuf::Message& message,

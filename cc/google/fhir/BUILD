@@ -50,6 +50,7 @@ cc_test(
         "//proto/r4/core/resources:metadata_resource_cc_proto",
         "//proto/r4/core/resources:patient_cc_proto",
         "@com_google_googletest//:gtest_main",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 
@@ -71,6 +72,36 @@ cc_library(
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:optional",
         "@com_google_protobuf//:protobuf",
+    ],
+)
+
+cc_library(
+    name = "references",
+    srcs = ["references.cc"],
+    hdrs = ["references.h"],
+    strip_include_prefix = "//cc/",
+    deps = [
+        ":type_macros",
+        ":util",
+        "//cc/google/fhir/status:statusor",
+        "@com_google_absl//absl/strings",
+        "@com_google_protobuf//:protobuf",
+        "@com_googlesource_code_re2//:re2",
+    ],
+)
+
+cc_test(
+    name = "references_test",
+    srcs = ["references_test.cc"],
+    deps = [
+        ":references",
+        "//cc/google/fhir/testutil:proto_matchers",
+        "//proto/stu3:codes_cc_proto",
+        "//proto/stu3:datatypes_cc_proto",
+        "//proto/stu3:resources_cc_proto",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/time",
+        "@com_google_googletest//:gtest_main",
     ],
 )
 
@@ -111,17 +142,16 @@ cc_library(
     deps = [
         ":annotations",
         ":proto_util",
-        "@com_google_protobuf//:protobuf",
-        "@com_google_absl//absl/base:core_headers",
-        "@com_google_absl//absl/memory",
-        "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/time",
+        ":type_macros",
         "//cc/google/fhir/status",
         "//cc/google/fhir/status:statusor",
         "//proto:annotations_cc_proto",
-        "//proto/r4/core:datatypes_cc_proto",
-        "//proto/stu3:datatypes_cc_proto",
+        "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/memory",
         "@com_google_absl//absl/status",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/time",
+        "@com_google_protobuf//:protobuf",
         "@com_googlesource_code_re2//:re2",
     ],
 )
@@ -130,14 +160,24 @@ cc_test(
     name = "util_test",
     srcs = ["util_test.cc"],
     deps = [
+        ":test_helper",
         ":util",
+        "//cc/google/fhir/status",
         "//cc/google/fhir/testutil:proto_matchers",
+        "//proto/r4/core:datatypes_cc_proto",
+        "//proto/r4/core/resources:bundle_and_contained_resource_cc_proto",
+        "//proto/r4/core/resources:medication_cc_proto",
+        "//proto/r4/core/resources:medication_request_cc_proto",
+        "//proto/r4/core/resources:patient_cc_proto",
         "//proto/stu3:codes_cc_proto",
         "//proto/stu3:datatypes_cc_proto",
         "//proto/stu3:resources_cc_proto",
+        "//testdata/r4/profiles:test_cc_proto",
+        "@com_google_absl//absl/memory",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/time",
         "@com_google_googletest//:gtest_main",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 
@@ -148,6 +188,7 @@ cc_library(
     strip_include_prefix = "//cc/",
     deps = [
         ":annotations",
+        ":fhir_types",
         ":primitive_handler",
         ":proto_util",
         ":util",
@@ -155,8 +196,6 @@ cc_library(
         "//cc/google/fhir/status",
         "//cc/google/fhir/status:statusor",
         "//proto:annotations_cc_proto",
-        "//proto/r4/core:datatypes_cc_proto",
-        "//proto/stu3:datatypes_cc_proto",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
         "@com_google_protobuf//:protobuf",
@@ -169,13 +208,13 @@ cc_library(
     hdrs = ["proto_util.h"],
     strip_include_prefix = "//cc/",
     deps = [
-        "//cc/google/fhir/status",
-        "//cc/google/fhir/status:statusor",
+        "@com_google_protobuf//:protobuf",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
-        "@com_google_protobuf//:protobuf",
-        "@com_googlesource_code_re2//:re2",
+        "//cc/google/fhir/status",
+        "//cc/google/fhir/status:statusor",
         "@org_tensorflow//tensorflow/core:lib",
+        "@com_googlesource_code_re2//:re2",
     ],
 )
 
@@ -223,12 +262,11 @@ cc_library(
     strip_include_prefix = "//cc/",
     deps = [
         ":proto_util",
+        ":type_macros",
         ":util",
         "//cc/google/fhir/status",
         "//cc/google/fhir/status:statusor",
         "//proto:version_config_cc_proto",
-        "//proto/stu3:datatypes_cc_proto",
-        "//proto/stu3:resources_cc_proto",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/time",
@@ -240,10 +278,17 @@ cc_library(
 cc_test(
     name = "bundle_to_versioned_resources_converter_test",
     srcs = ["bundle_to_versioned_resources_converter_test.cc"],
-    data = ["//proto/stu3:version_config.textproto"],
+    data = [
+        "//proto/r4:version_config.textproto",
+        "//proto/stu3:version_config.textproto",
+    ],
     deps = [
         ":bundle_to_versioned_resources_converter",
+        "//cc/google/fhir/seqex:r4",
+        "//cc/google/fhir/seqex:stu3",
+        "//cc/google/fhir/testutil:fhir_test_env",
         "//cc/google/fhir/testutil:proto_matchers",
+        "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest_main",
         "@com_google_protobuf//:protobuf",
         "@org_tensorflow//tensorflow/core:lib",
@@ -299,6 +344,7 @@ cc_library(
         ":primitive_handler",
         ":primitive_wrapper",
         ":proto_util",
+        ":references",
         ":resource_validation",
         ":util",
         "//cc/google/fhir/r4:profiles",
@@ -453,4 +499,10 @@ cc_library(
         "@com_google_protobuf//:protobuf",
         "@jsoncpp_git//:jsoncpp",
     ],
+)
+
+cc_library(
+    name = "type_macros",
+    hdrs = ["type_macros.h"],
+    strip_include_prefix = "//cc/",
 )

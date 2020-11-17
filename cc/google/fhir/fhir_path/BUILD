@@ -39,10 +39,10 @@ cc_library(
     deps = [
         ":fhir_path_grammar",
         ":fhir_path_lexer",
+        ":fhir_path_types",
         ":utils",
         "//cc/google/fhir:annotations",
         "//cc/google/fhir:primitive_handler",
-        "//cc/google/fhir:primitive_wrapper",
         "//cc/google/fhir:proto_util",
         "//cc/google/fhir:util",
         "//cc/google/fhir/status",
@@ -55,7 +55,6 @@ cc_library(
         "@com_google_absl//absl/types:optional",
         "@com_google_protobuf//:protobuf",
         "@icu//:common",
-        "@org_tensorflow//tensorflow/core:lib",
     ],
 )
 
@@ -70,22 +69,16 @@ cc_library(
     strip_include_prefix = "//cc/",
     deps = [
         ":fhir_path",
-        ":utils",
         "//cc/google/fhir:annotations",
         "//cc/google/fhir:primitive_handler",
-        "//cc/google/fhir:primitive_wrapper",
         "//cc/google/fhir:proto_util",
-        "//cc/google/fhir:util",
-        "//cc/google/fhir/status",
         "//cc/google/fhir/status:statusor",
         "//proto:annotations_cc_proto",
-        "//proto/r4/core:datatypes_cc_proto",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
-        "@com_google_absl//absl/time",
         "@com_google_absl//absl/types:optional",
         "@com_google_protobuf//:protobuf",
     ],
@@ -142,6 +135,25 @@ cc_library(
 )
 
 cc_library(
+    name = "fhir_path_types",
+    srcs = [
+        "fhir_path_types.cc",
+    ],
+    hdrs = [
+        "fhir_path_types.h",
+    ],
+    strip_include_prefix = "//cc/",
+    visibility = [":__pkg__"],
+    deps = [
+        "//cc/google/fhir:annotations",
+        "//cc/google/fhir/status:statusor",
+        "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/strings",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
+cc_library(
     name = "utils",
     srcs = [
         "utils.cc",
@@ -170,17 +182,16 @@ cc_test(
         "//cc/google/fhir:proto_util",
         "//cc/google/fhir/r4:primitive_handler",
         "//cc/google/fhir/status",
+        "//cc/google/fhir/status:statusor",
         "//cc/google/fhir/stu3:primitive_handler",
+        "//cc/google/fhir/testutil:fhir_test_env",
         "//cc/google/fhir/testutil:proto_matchers",
-        "//proto/r4:uscore_cc_proto",
-        "//proto/r4:uscore_codes_cc_proto",
         "//proto/r4/core:codes_cc_proto",
         "//proto/r4/core:datatypes_cc_proto",
         "//proto/r4/core/resources:bundle_and_contained_resource_cc_proto",
         "//proto/r4/core/resources:encounter_cc_proto",
         "//proto/r4/core/resources:medication_knowledge_cc_proto",
         "//proto/r4/core/resources:observation_cc_proto",
-        "//proto/r4/core/resources:organization_cc_proto",
         "//proto/r4/core/resources:parameters_cc_proto",
         "//proto/r4/core/resources:patient_cc_proto",
         "//proto/r4/core/resources:structure_definition_cc_proto",
@@ -210,6 +221,7 @@ cc_test(
         ":r4_fhir_path_validation",
         ":stu3_fhir_path_validation",
         "//cc/google/fhir/status:statusor",
+        "//cc/google/fhir/testutil:fhir_test_env",
         "//proto/r4:uscore_cc_proto",
         "//proto/r4:uscore_codes_cc_proto",
         "//proto/r4/core:datatypes_cc_proto",
@@ -226,7 +238,6 @@ cc_test(
         "//proto/stu3:uscore_cc_proto",
         "//proto/stu3:uscore_codes_cc_proto",
         "@com_google_absl//absl/status",
-        "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest_main",
         "@com_google_protobuf//:protobuf",
     ],
@@ -241,6 +252,24 @@ cc_test(
     deps = [
         ":fhir_path_validation",
         ":fhir_path_validation_rule",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "fhir_path_types_test",
+    size = "small",
+    srcs = [
+        "fhir_path_types_test.cc",
+    ],
+    deps = [
+        ":fhir_path_types",
+        "//cc/google/fhir:type_macros",
+        "//cc/google/fhir:util",
+        "//proto/r4/core:datatypes_cc_proto",
+        "//proto/r4/core/resources:bundle_and_contained_resource_cc_proto",
+        "//proto/stu3:datatypes_cc_proto",
+        "//proto/stu3:resources_cc_proto",
         "@com_google_googletest//:gtest_main",
     ],
 )

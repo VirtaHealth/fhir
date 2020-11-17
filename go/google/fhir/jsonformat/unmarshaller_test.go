@@ -15,16 +15,19 @@
 package jsonformat
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"math"
-	"reflect"
 	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 
 	anypb "google.golang.org/protobuf/types/known/anypb"
+
 	c4pb "google/fhir/proto/r4/core/codes_go_proto"
 	d4pb "google/fhir/proto/r4/core/datatypes_go_proto"
 	r4pb "google/fhir/proto/r4/core/resources/bundle_and_contained_resource_go_proto"
@@ -709,6 +712,167 @@ func TestUnmarshal(t *testing.T) {
 				},
 			},
 		},
+		// TODO: remove test once upper camel case fields are rejected.
+		{
+			name: "upper camel case is valid",
+			json: []byte(`
+			{
+			  "Id":"example",
+			  "resourceType": "Patient",
+				"Gender": "female",
+				"Extension": [
+					{
+						"Url": "http://nema.org/fhir/extensions#0010:1020",
+						"ValueQuantity": {
+							"Value": 1.83,
+							"Unit": "m"
+						}
+					}
+				],
+				"Identifier": [
+					{
+						"System": "http://nema.org/examples/patients",
+						"Value": "1234"
+					}
+				],
+				"BirthDate": "2016-05-18",
+				"_BirthDate": {
+					"Id": "12345",
+					"Extension": [
+						{
+							"Url": "http://hl7.org/fhir/StructureDefinition/patient-birthTime",
+							"ValueDateTime": "2016-05-18T10:28:45Z",
+							"_ValueDateTime": {
+								"Extension": [{
+									"Url": "http://example.com/fhir/extension",
+									"ValueDateTime": "2016-05-18T10:28:45Z"
+								}]
+							}
+						}
+					]
+				}
+			}`),
+			wants: []mvr{
+				{
+					ver: STU3,
+					r: &r3pb.ContainedResource{
+						OneofResource: &r3pb.ContainedResource_Patient{
+							Patient: &r3pb.Patient{
+								Id: &d3pb.Id{
+									Value: "example",
+								},
+								Gender: &c3pb.AdministrativeGenderCode{
+									Value: c3pb.AdministrativeGenderCode_FEMALE,
+								},
+								Extension: []*d3pb.Extension{{
+									Url: &d3pb.Uri{Value: "http://nema.org/fhir/extensions#0010:1020"},
+									Value: &d3pb.Extension_ValueX{
+										Choice: &d3pb.Extension_ValueX_Quantity{
+											Quantity: &d3pb.Quantity{Value: &d3pb.Decimal{Value: "1.83"}, Unit: &d3pb.String{Value: "m"}},
+										},
+									},
+								}},
+								Identifier: []*d3pb.Identifier{{
+									System: &d3pb.Uri{
+										Value: "http://nema.org/examples/patients",
+									},
+									Value: &d3pb.String{Value: "1234"},
+								}},
+								BirthDate: &d3pb.Date{
+									Id:        &d3pb.String{Value: "12345"},
+									ValueUs:   1463554800000000,
+									Timezone:  "America/Los_Angeles",
+									Precision: d3pb.Date_DAY,
+									Extension: []*d3pb.Extension{{
+										Url: &d3pb.Uri{Value: "http://hl7.org/fhir/StructureDefinition/patient-birthTime"},
+										Value: &d3pb.Extension_ValueX{
+											Choice: &d3pb.Extension_ValueX_DateTime{
+												DateTime: &d3pb.DateTime{
+													ValueUs:   1463567325000000,
+													Timezone:  "Z",
+													Precision: d3pb.DateTime_SECOND,
+													Extension: []*d3pb.Extension{{
+														Url: &d3pb.Uri{Value: "http://example.com/fhir/extension"},
+														Value: &d3pb.Extension_ValueX{
+															Choice: &d3pb.Extension_ValueX_DateTime{
+																DateTime: &d3pb.DateTime{
+																	ValueUs:   1463567325000000,
+																	Timezone:  "Z",
+																	Precision: d3pb.DateTime_SECOND,
+																},
+															},
+														},
+													}},
+												},
+											},
+										},
+									}},
+								},
+							},
+						},
+					},
+				},
+				{
+					ver: R4,
+					r: &r4pb.ContainedResource{
+						OneofResource: &r4pb.ContainedResource_Patient{
+							Patient: &r4patientpb.Patient{
+								Id: &d4pb.Id{
+									Value: "example",
+								},
+								Gender: &r4patientpb.Patient_GenderCode{
+									Value: c4pb.AdministrativeGenderCode_FEMALE,
+								},
+								Extension: []*d4pb.Extension{{
+									Url: &d4pb.Uri{Value: "http://nema.org/fhir/extensions#0010:1020"},
+									Value: &d4pb.Extension_ValueX{
+										Choice: &d4pb.Extension_ValueX_Quantity{
+											Quantity: &d4pb.Quantity{Value: &d4pb.Decimal{Value: "1.83"}, Unit: &d4pb.String{Value: "m"}},
+										},
+									},
+								}},
+								Identifier: []*d4pb.Identifier{{
+									System: &d4pb.Uri{
+										Value: "http://nema.org/examples/patients",
+									},
+									Value: &d4pb.String{Value: "1234"},
+								}},
+								BirthDate: &d4pb.Date{
+									Id:        &d4pb.String{Value: "12345"},
+									ValueUs:   1463554800000000,
+									Timezone:  "America/Los_Angeles",
+									Precision: d4pb.Date_DAY,
+									Extension: []*d4pb.Extension{{
+										Url: &d4pb.Uri{Value: "http://hl7.org/fhir/StructureDefinition/patient-birthTime"},
+										Value: &d4pb.Extension_ValueX{
+											Choice: &d4pb.Extension_ValueX_DateTime{
+												DateTime: &d4pb.DateTime{
+													ValueUs:   1463567325000000,
+													Timezone:  "Z",
+													Precision: d4pb.DateTime_SECOND,
+													Extension: []*d4pb.Extension{{
+														Url: &d4pb.Uri{Value: "http://example.com/fhir/extension"},
+														Value: &d4pb.Extension_ValueX{
+															Choice: &d4pb.Extension_ValueX_DateTime{
+																DateTime: &d4pb.DateTime{
+																	ValueUs:   1463567325000000,
+																	Timezone:  "Z",
+																	Precision: d4pb.DateTime_SECOND,
+																},
+															},
+														},
+													}},
+												},
+											},
+										},
+									}},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -823,7 +987,7 @@ func TestUnmarshal_Errors(t *testing.T) {
 			errs: []string{`error at "Patient": unknown field`},
 		},
 		{
-			name: "Extension of non-primitive, non-repeated field",
+			name: "Extension of non-primitive field",
 			json: `
 		{
       "resourceType": "Patient",
@@ -831,34 +995,35 @@ func TestUnmarshal_Errors(t *testing.T) {
 			"_managingOrganization": {"foo": "bar"}
     }`,
 			vers: []Version{STU3, R4},
-			errs: []string{
-				`error at "Patient._managingOrganization": invalid extension field`,
-				`error at "Patient._managingOrganization": unknown field`,
-			},
+			errs: []string{`error at "Patient": unknown field`},
 		},
 		{
 			name: "Extension type mismatch",
 			json: `
 		{
       "resourceType": "Patient",
-			"name": [{"given": ["Pat"]}],
-			"_name": {"foo": "bar"}
+			"name": [{
+          "given": ["Pat"],
+          "_given": {"id": "1"}
+      }]
     }`,
 			vers: []Version{STU3, R4},
-			errs: []string{`error at "Patient._name": expected array`},
+			errs: []string{`error at "Patient.name[0]._given": expected array`},
 		},
 		{
 			name: "Extension length mismatch",
 			json: `
-		{
-      "resourceType": "Patient",
-			"name": [{"given": ["Pat"]}],
-			"_name": [{"id":"1"},{"id":"2"}]
-    }`,
+			{
+				"resourceType": "Patient",
+				"name": [{
+					"given": ["Pat"],
+					"_given": [{"id": "1"}, {"id": "2"}]
+				}]
+			}`,
 			vers: []Version{STU3, R4},
 			errs: []string{
-				`error at "Patient._name": array length mismatch, expected 1, found 2`,
-				`error at "Patient.name": array length mismatch, expected 2, found 1`,
+				`error at "Patient.name[0]._given": array length mismatch, expected 1, found 2`,
+				`error at "Patient.name[0].given": array length mismatch, expected 2, found 1`,
 			},
 		},
 		{
@@ -962,6 +1127,19 @@ func TestUnmarshal_Errors(t *testing.T) {
 			errs: []string{`error at "Observation.effectiveDateTime": expected datetime`},
 		},
 		{
+			name: "missing value type for choice type",
+			json: `
+		{
+			"resourceType": "Patient",
+			"extension": [{
+				"url": "https://example.com",
+				"value": "x"
+			}]
+		}`,
+			vers: []Version{STU3, R4},
+			errs: []string{`error at "Patient.extension[0]": unknown field`},
+		},
+		{
 			name: "string field contains invalid UTF-8",
 			json: `
 			{
@@ -982,6 +1160,77 @@ func TestUnmarshal_Errors(t *testing.T) {
 			`,
 			vers: []Version{STU3, R4},
 			errs: []string{`error at "Patient.language": expected UTF-8 encoding`},
+		},
+		// TODO: add test for rejecting upper camel case fields once deprecated.
+		{
+			name: "all upper case is invalid",
+			json: `
+			{
+				"resourceType": "Patient",
+				"GENDER": "female"
+			}`,
+			vers: []Version{STU3, R4},
+			errs: []string{`error at "Patient": unknown field`},
+		},
+		{
+			name: "all lower case is invalid for two or more word field",
+			json: `
+			{
+				"resourceType": "Patient",
+				"managingorganization": {"reference": "Org/1"}
+			}`,
+			vers: []Version{STU3, R4},
+			errs: []string{`error at "Patient": unknown field`},
+		},
+		{
+			name: "invalid mixed case",
+			json: `
+			{
+				"resourceType": "Patient",
+				"gEnDeR": "female"
+			}`,
+			vers: []Version{STU3, R4},
+			errs: []string{`error at "Patient": unknown field`},
+		},
+		{
+			name: "leading upper case resourceType",
+			json: `
+			{
+				"ResourceType": "Patient",
+				"gender": "female"
+			}`,
+			vers: []Version{STU3, R4},
+			errs: []string{`missing required field "resourceType"`},
+		},
+		{
+			name: "leading upper case contained",
+			json: `{
+			"Contained":[
+				{
+					"id":"nested",
+					"resourceType":"Patient"
+				}
+			],
+			"id":"example",
+			"resourceType":"Patient"
+			}`,
+			vers: []Version{R4},
+			errs: []string{`error at "Patient.Contained[0]": unknown field`},
+		},
+		{
+			name: "leading upper case fhir_comments",
+			json: `
+			{
+				"resourceType": "Patient",
+				"careProvider": [
+					{
+						"reference": "Practitioner/1",
+						"Fhir_comments": ["c1", "c2"]
+					}
+				]
+			}`,
+			vers: []Version{DSTU2},
+			errs: []string{`error at "Patient.careProvider[0]": unknown field`},
 		},
 	}
 	for _, test := range tests {
@@ -1510,8 +1759,9 @@ func TestParseURIs(t *testing.T) {
 				t.Run(i.ver.String(), func(t *testing.T) {
 					u := setupUnmarshaller(t, i.ver)
 					r := proto.Clone(i.r)
-					reflect.ValueOf(r).Elem().FieldByName("Value").Set(reflect.ValueOf(test))
-					got, err := u.parsePrimitiveType("value", proto.MessageReflect(r), json.RawMessage(strconv.Quote(test)))
+					rpb := proto.MessageReflect(r)
+					rpb.Set(rpb.Descriptor().Fields().ByName("value"), protoreflect.ValueOfString(test))
+					got, err := u.parsePrimitiveType("value", rpb, json.RawMessage(strconv.Quote(test)))
 					if err != nil {
 						t.Fatalf("parse Uri, got err %v, want <nil>", err)
 					}
@@ -1924,6 +2174,7 @@ func TestUnmarshalVersioned(t *testing.T) {
 	if _, err := u4.UnmarshalR3([]byte(patient)); err == nil {
 		t.Errorf("UnmarshalR3(%s) didn't return expected error", patient)
 	}
+
 }
 
 func TestUnmarshal_NestingDepth(t *testing.T) {
@@ -2020,4 +2271,87 @@ func TestUnmarshal_NestingDepth(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestUnmarshaller_UnmarshalR4Streaming(t *testing.T) {
+	t.Run("streaming unmarshal", func(t *testing.T) {
+		json := `{"resourceType":"Patient", "id": "exampleID1"}
+	{"resourceType":"Patient", "id": "exampleID2"}
+	{"resourceType":"Patient", "id": "exampleID3"}`
+		expectedResults := []*r4pb.ContainedResource{
+			&r4pb.ContainedResource{
+				OneofResource: &r4pb.ContainedResource_Patient{
+					Patient: &r4patientpb.Patient{
+						Id: &d4pb.Id{Value: "exampleID1"},
+					},
+				},
+			},
+			&r4pb.ContainedResource{
+				OneofResource: &r4pb.ContainedResource_Patient{
+					Patient: &r4patientpb.Patient{
+						Id: &d4pb.Id{Value: "exampleID2"},
+					},
+				},
+			},
+			&r4pb.ContainedResource{
+				OneofResource: &r4pb.ContainedResource_Patient{
+					Patient: &r4patientpb.Patient{
+						Id: &d4pb.Id{Value: "exampleID3"},
+					},
+				},
+			}}
+
+		u, err := NewUnmarshaller("America/Los_Angeles", R4)
+		if err != nil {
+			fmt.Println("error")
+		}
+
+		jsonReader := bytes.NewReader([]byte(json))
+		resourceChan := u.UnmarshalR4Streaming(jsonReader)
+
+		var results []*r4pb.ContainedResource
+
+		for r := range resourceChan {
+			if r.Error != nil {
+				t.Fatalf("UnmarshalR4Streaming(%s) unexpected error when receiving from the output channel: %v", json, r.Error)
+			} else {
+				results = append(results, r.ContainedResource)
+			}
+		}
+
+		// Assert size is correct
+		if len(results) != len(expectedResults) {
+			t.Fatalf("UnmarshalR4Streaming(%s) channel returned unexpected size of result. want: %d got: %d", json, len(expectedResults), len(results))
+		}
+
+		for i, result := range results {
+			if !proto.Equal(result, expectedResults[i]) {
+				t.Fatalf("UnmarshalR4Streaming(%s) channel returned unexpected result. want: %v got %v", json, expectedResults[i], result)
+			}
+		}
+	})
+
+}
+
+func ExampleUnmarshaller_UnmarshalR4Streaming() {
+	json := `{"resourceType":"Patient", "id": "exampleID1"}
+	{"resourceType":"Patient", "id": "exampleID2"}`
+	u, err := NewUnmarshaller("America/Los_Angeles", R4)
+	if err != nil {
+		fmt.Println("error")
+	}
+	jsonReader := bytes.NewReader([]byte(json))
+	resourceChan := u.UnmarshalR4Streaming(jsonReader)
+
+	for r := range resourceChan {
+		if r.Error != nil {
+			fmt.Printf("err: %v", r.Error)
+		} else {
+			fmt.Printf("%s\n", r.ContainedResource.GetPatient().Id.GetValue())
+		}
+	}
+
+	// Output:
+	// exampleID1
+	// exampleID2
 }

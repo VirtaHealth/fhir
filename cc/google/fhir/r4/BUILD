@@ -122,7 +122,9 @@ cc_library(
     srcs = ["primitive_handler.cc"],
     hdrs = ["primitive_handler.h"],
     strip_include_prefix = "//cc/",
-    visibility = ["//cc/google/fhir:internal"],
+    visibility = [
+        "//cc/google/fhir:internal",
+    ],
     deps = [
         "//cc/google/fhir:annotations",
         "//cc/google/fhir:codes",
@@ -195,7 +197,9 @@ cc_test(
         ":json_format",
         ":primitive_handler",
         ":profiles",
+        "//cc/google/fhir:proto_util",
         "//cc/google/fhir:test_helper",
+        "//cc/google/fhir/testutil:generator",
         "//cc/google/fhir/testutil:proto_matchers",
         "//proto:annotations_cc_proto",
         "//proto/r4/core:codes_cc_proto",
