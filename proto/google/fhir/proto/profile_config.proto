@@ -21,6 +21,7 @@ import "proto/google/fhir/proto/r4/core/codes.proto";
 
 option java_package = "com.google.fhir.proto";
 option java_multiple_files = true;
+option go_package = "github.com/google/fhir/go/proto/google/fhir/proto/profile_config_go_proto";
 
 // Metadata for generating FHIR packages
 message PackageInfo {
